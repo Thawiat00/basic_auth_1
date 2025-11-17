@@ -23,3 +23,60 @@ app.get('/', (req, res) => {
     }
   });
 });
+
+
+
+// ==================== ROUTE: ลงทะเบียนผู้ใช้ ====================
+app.post('/register', async (req, res) => {
+  try {
+    const { username, password } = req.body;
+
+    // ตรวจสอบว่ากรอกข้อมูลครบหรือไม่
+    if (!username || !password) {
+      return res.status(400).json({ 
+        message: 'กรุณากรอก username และ password' 
+      });
+    }
+
+    // ตรวจสอบว่า username ซ้ำหรือไม่
+    const existingUser = users.find(u => u.username === username);
+    if (existingUser) {
+      return res.status(400).json({ 
+        message: 'Username นี้ถูกใช้งานแล้ว' 
+      });
+    }
+
+    // เข้ารหัสรหัสผ่านด้วย bcrypt (saltRounds = 10)
+    const saltRounds = 10;
+    const hashedPassword = await bcrypt.hash(password, saltRounds);
+
+    // สร้างผู้ใช้ใหม่
+    const newUser = {
+      id: users.length + 1,
+      username: username,
+      password: hashedPassword,
+      createdAt: new Date().toISOString()
+    };
+
+    users.push(newUser);
+
+    // ส่งข้อมูลกลับ (ไม่รวมรหัสผ่าน)
+    res.status(201).json({
+      message: 'ลงทะเบียนสำเร็จ!',
+      user: {
+        id: newUser.id,
+        username: newUser.username,
+        createdAt: newUser.createdAt
+      }
+    });
+
+  } catch (error) {
+    console.error('Register error:', error);
+    res.status(500).json({ 
+      message: 'เกิดข้อผิดพลาดในการลงทะเบียน' 
+    });
+  }
+});
+
+
+
