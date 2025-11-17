@@ -80,3 +80,59 @@ app.post('/register', async (req, res) => {
 
 
 
+// ==================== ROUTE: เข้าสู่ระบบ ====================
+app.post('/login', async (req, res) => {
+  try {
+    const { username, password } = req.body;
+
+    // ตรวจสอบว่ากรอกข้อมูลครบหรือไม่
+    if (!username || !password) {
+      return res.status(400).json({ 
+        message: 'กรุณากรอก username และ password' 
+      });
+    }
+
+    // ค้นหาผู้ใช้จาก username
+    const user = users.find(u => u.username === username);
+
+    if (!user) {
+      return res.status(401).json({ 
+        message: 'Username หรือ password ไม่ถูกต้อง' 
+      });
+    }
+
+    // เปรียบเทียบรหัสผ่านที่กรอกกับรหัสผ่านที่เข้ารหัสไว้
+    const passwordMatch = await bcrypt.compare(password, user.password);
+
+    if (!passwordMatch) {
+      return res.status(401).json({ 
+        message: 'Username หรือ password ไม่ถูกต้อง' 
+      });
+    }
+
+    // สร้าง Basic Auth token
+    // รูปแบบ: username:password -> encode เป็น Base64
+    const credentials = `${username}:${password}`;
+    const encodedCredentials = Buffer.from(credentials).toString('base64');
+    const basicAuthToken = `Basic ${encodedCredentials}`;
+
+    // เข้าสู่ระบบสำเร็จ
+    res.json({
+      message: 'เข้าสู่ระบบสำเร็จ!',
+      user: {
+        id: user.id,
+        username: user.username
+      },
+      authToken: basicAuthToken,
+      instructions: 'นำ authToken ไปใส่ใน Header: "Authorization: <authToken>"'
+    });
+
+  } catch (error) {
+    console.error('Login error:', error);
+    res.status(500).json({ 
+      message: 'เกิดข้อผิดพลาดในการเข้าสู่ระบบ' 
+    });
+  }
+});
+
+
