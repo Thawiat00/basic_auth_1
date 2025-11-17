@@ -230,3 +230,21 @@ app.get('/api/users', (req, res) => {
     users: userList
   });
 });
+
+
+
+// ==================== เริ่มต้น Server ====================
+const PORT = process.env.PORT || 8080;
+
+app.listen(PORT, () => {
+  console.log('='.repeat(50));
+  console.log(`🚀 Server กำลังทำงานที่ http://localhost:${PORT}`);
+  console.log('='.repeat(50));
+  console.log('📌 API Endpoints:');
+  console.log(`   GET  / - ดูรายการ endpoints ทั้งหมด`);
+  console.log(`   POST /register - ลงทะเบียนผู้ใช้`);
+  console.log(`   POST /login - เข้าสู่ระบบ`);
+  console.log(`   GET  /api/protected - ข้อมูลที่ต้องการ auth`);
+  console.log(`   GET  /api/users - ดูรายชื่อผู้ใช้`);
+  console.log('='.repeat(50));
+});
