@@ -213,3 +213,20 @@ app.get('/api/protected', basicAuth, (req, res) => {
     }
   });
 });
+
+
+// ==================== ROUTE: ดูรายชื่อผู้ใช้ทั้งหมด ====================
+app.get('/api/users', (req, res) => {
+  // ส่งข้อมูลผู้ใช้โดยไม่รวมรหัสผ่าน
+  const userList = users.map(user => ({
+    id: user.id,
+    username: user.username,
+    createdAt: user.createdAt
+  }));
+
+  res.json({
+    message: 'รายชื่อผู้ใช้ทั้งหมด',
+    totalUsers: userList.length,
+    users: userList
+  });
+});
