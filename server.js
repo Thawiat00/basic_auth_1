@@ -136,3 +136,65 @@ app.post('/login', async (req, res) => {
 });
 
 
+// ==================== MIDDLEWARE: Basic Authentication ====================
+const basicAuth = async (req, res, next) => {
+  try {
+    // ดึง Authorization header
+    const authHeader = req.headers.authorization;
+
+    // ตรวจสอบว่ามี header และเป็นรูปแบบ Basic Auth หรือไม่
+    if (!authHeader || !authHeader.startsWith('Basic ')) {
+      res.setHeader('WWW-Authenticate', 'Basic realm="API Authentication"');
+      return res.status(401).json({ 
+        message: 'กรุณาระบุ Authorization header',
+        format: 'Authorization: Basic <base64-encoded-credentials>'
+      });
+    }
+
+    // แยกและ decode credentials
+    const encodedCredentials = authHeader.split(' ')[1];
+    const decodedCredentials = Buffer.from(encodedCredentials, 'base64').toString('utf-8');
+    const [username, password] = decodedCredentials.split(':');
+
+    // ตรวจสอบว่า decode ได้สำเร็จหรือไม่
+    if (!username || !password) {
+      return res.status(401).json({ 
+        message: 'รูปแบบ credentials ไม่ถูกต้อง' 
+      });
+    }
+
+    // ค้นหาผู้ใช้
+    const user = users.find(u => u.username === username);
+
+    if (!user) {
+      res.setHeader('WWW-Authenticate', 'Basic realm="API Authentication"');
+      return res.status(401).json({ 
+        message: 'ข้อมูลการเข้าสู่ระบบไม่ถูกต้อง' 
+      });
+    }
+
+    // เปรียบเทียบรหัสผ่าน
+    const passwordMatch = await bcrypt.compare(password, user.password);
+
+    if (!passwordMatch) {
+      res.setHeader('WWW-Authenticate', 'Basic realm="API Authentication"');
+      return res.status(401).json({ 
+        message: 'ข้อมูลการเข้าสู่ระบบไม่ถูกต้อง' 
+      });
+    }
+
+    // Authentication สำเร็จ - เก็บข้อมูลผู้ใช้ใน request
+    req.user = {
+      id: user.id,
+      username: user.username
+    };
+
+    next(); // ไปยัง route ต่อไป
+
+  } catch (error) {
+    console.error('Auth middleware error:', error);
+    return res.status(500).json({ 
+      message: 'เกิดข้อผิดพลาดในการตรวจสอบสิทธิ์' 
+    });
+  }
+};
